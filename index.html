@@ -17,10 +17,10 @@
       margin: 0;
       position: relative;
 
-        background-image: url('https://t4.ftcdn.net/jpg/02/10/45/95/360_F_210459536_XmLDEcKq2DpeNLVmheuWeu9NM9aGKnih.jpg');
-  background-size: cover; /* Ensures the image covers the entire viewport */
-  background-position: center; /* Centers the image */
-  background-repeat: no-repeat; /* Prevents the image from repeating */
+      background-image: url('https://t4.ftcdn.net/jpg/02/10/45/95/360_F_210459536_XmLDEcKq2DpeNLVmheuWeu9NM9aGKnih.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
     #chart-container {
@@ -33,8 +33,6 @@
       background-color: white;
     }
 
-    /* Draggable vertical line */
-    /* Draggable vertical line */
     #draggable {
       position: absolute;
       width: 5px;
@@ -44,7 +42,6 @@
       cursor: pointer;
     }
 
-    /* Tooltip to show values */
     #tooltip {
       position: absolute;
       background-color: rgba(0, 0, 0, 0.75);
@@ -54,10 +51,50 @@
       font-size: 12px;
       display: none;
       z-index: 20;
-      max-width: 150px; /* Set a reasonable max width */
+      max-width: 150px;
     }
 
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      padding-top: 100px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+    }
 
+    .modal-content {
+      margin: auto;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      width: 50%;
+      text-align: center;
+    }
+
+    .modal-content h2 {
+      margin: 0 0 15px;
+    }
+
+    .close {
+      color: #aaa;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+    }
+
+    .close:hover, .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -65,122 +102,97 @@
   <div id="chart-container">
     <div id="draggable"></div>
     <canvas id="myChart"></canvas>
-    <div id="tooltip"></div> <!-- Tooltip to display values -->
+    <div id="tooltip"></div>
   </div>
 
-
+  <!-- Welcome Modal -->
+  <div id="welcomeModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>!Important!</h3>
+      <h2>Drag left green vertical line using mouse to calculate distance from P and S wave.</h2>
+    </div>
+  </div>
 
   <script>
+    // Show the welcome modal when the app loads
+    $(document).ready(function() {
+      $('#welcomeModal').fadeIn();
 
-const circlePlugin = {
-    id: 'circlePlugin',
-    beforeDraw: function(chart) {
-        const ctx = chart.ctx;
-        const chartArea = chart.chartArea;
+      // Close modal when the close button is clicked
+      $('.close').click(function() {
+        $('#welcomeModal').fadeOut();
+      });
 
-        if (chart.intersectionPoints) {
-            // Draw circle for P
-            ctx.beginPath();
-            ctx.arc(chart.intersectionPoints.p.x, chart.intersectionPoints.p.y, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = 'black';
-            ctx.fill();
-            ctx.closePath();
-
-            // Draw circle for S
-            ctx.beginPath();
-            ctx.arc(chart.intersectionPoints.s.x, chart.intersectionPoints.s.y, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = 'black';
-            ctx.fill();
-            ctx.closePath();
+      // Close modal when clicking outside of the modal content
+      $(window).click(function(event) {
+        if ($(event.target).is('#welcomeModal')) {
+          $('#welcomeModal').fadeOut();
         }
-    }
-};
-    // Initialize the draggable line
+      });
+    });
+
+    const circlePlugin = {
+      id: 'circlePlugin',
+      beforeDraw: function(chart) {
+        const ctx = chart.ctx;
+        if (chart.intersectionPoints) {
+          // Draw circle for P
+          ctx.beginPath();
+          ctx.arc(chart.intersectionPoints.p.x, chart.intersectionPoints.p.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = 'black';
+          ctx.fill();
+          ctx.closePath();
+
+          // Draw circle for S
+          ctx.beginPath();
+          ctx.arc(chart.intersectionPoints.s.x, chart.intersectionPoints.s.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = 'black';
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+    };
+
     $(function() {
       $("#draggable").draggable({
         axis: "x",
         containment: "#myChart",
         drag: function(event, ui) {
           const canvas = document.getElementById('myChart');
-          const ctx = canvas.getContext('2d');
           const rect = canvas.getBoundingClientRect();
-          const chartLeft = rect.left;
-          const chartHeight = rect.height;
-          
-          const xPos = ui.position.left; // Position of the draggable line
-          const xValue = myChart.scales.x.getValueForPixel(xPos); // X value on the chart
-
-
-
-
-          // Find the nearest points on the datasets
+          const xPos = ui.position.left;
+          const xValue = myChart.scales.x.getValueForPixel(xPos);
           const pYValue = getYValueAtX(xValue, myChart.data.datasets[0].data);
           const sYValue = getYValueAtX(xValue, myChart.data.datasets[1].data);
+          const pPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(pYValue) };
+          const sPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(sYValue) };
 
-              // Calculate pixel positions for circles
-    const pPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(pYValue) };
-    const sPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(sYValue) };
-
-    // Set the intersection points to be used by the plugin
-    myChart.intersectionPoints = {
-        p: pPixelPos,
-        s: sPixelPos
-    };
-
-    // Update chart to show the circles
-    myChart.update();
-
-
+          myChart.intersectionPoints = { p: pPixelPos, s: sPixelPos };
+          myChart.update();
 
           const difference = pYValue && sYValue ? (pYValue - sYValue) : null;
-          const xOffset = -500; // To shift the tooltip slightly right of the draggable line
-          const yOffset = -30; // To position it a bit above the draggable line
-
-
-          // Update the tooltip with the current x, p, and s values
           const tooltip = document.getElementById('tooltip');
-          tooltip.innerHTML = `Distance: ${xValue.toFixed(2) } km<br>P: ${pYValue ? pYValue.toFixed(2) : 'N/A'} min<br>S: ${sYValue ? sYValue.toFixed(2) : 'N/A'}min<br>Time: ${difference ? difference.toFixed(2) : 'N/A'}min`;
+          tooltip.innerHTML = `Distance: ${xValue.toFixed(2)} km<br>P: ${pYValue ? pYValue.toFixed(2) : 'N/A'} min<br>S: ${sYValue ? sYValue.toFixed(2) : 'N/A'}min<br>Time: ${difference ? difference.toFixed(2) : 'N/A'}min`;
           tooltip.style.display = 'block';
-        tooltip.style.left = `${xPos + chartLeft + xOffset}px`;
-tooltip.style.top = `${rect.top + yOffset}px`;
-
-    const xPixelPos = myChart.scales.x.getPixelForValue(xValue); // Get pixel for xValue
-    const yPixelPos = myChart.scales.y.getPixelForValue(pYValue); // Get pixel for sYValue
-
-    const y1PixelPos = myChart.scales.y.getPixelForValue(sYValue); // Get pixel for sYValue
-
-
-    const height = Math.abs(yPixelPos - y1PixelPos);
-
-
-
-    const blackLine = document.getElementById('draggable');
-    blackLine.style.top = `${rect.top}px`;
-    blackLine.style.height = `${chartHeight}px`;
-
-
+          tooltip.style.left = `${xPos + rect.left - 500}px`;
+          tooltip.style.top = `${rect.top - 30}px`;
         }
       });
     });
 
-    // Helper function to find Y value for a given X in the dataset
     function getYValueAtX(x, data) {
-      // Find the nearest point in the data for the given x
       const point = data.find(p => p.x >= x);
       return point ? point.y : null;
     }
 
-
-
-
-    // AJAX function to fetch JSON data
     function fetchJSONFile(filePath, callback) {
       var xhr = new XMLHttpRequest();
       xhr.open('GET', filePath, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
         if (xhr.status === 200) {
-      callback(xhr.response);
+          callback(xhr.response);
         } else {
           console.error('Failed to load JSON file.');
         }
@@ -188,22 +200,10 @@ tooltip.style.top = `${rect.top + yOffset}px`;
       xhr.send();
     }
 
-    // Callback to process the data and plot the chart
     function plotChart(jsonData) {
-      const pData = jsonData
-        .filter(item => item.p !== "")
-        .map(item => ({
-          x: item.x,
-          y: item.p
-        }));
-      const sData = jsonData
-        .filter(item => item.s !== "")
-        .map(item => ({
-          x: item.x,
-          y: item.s
-        }));
+      const pData = jsonData.filter(item => item.p !== "").map(item => ({ x: item.x, y: item.p }));
+      const sData = jsonData.filter(item => item.s !== "").map(item => ({ x: item.x, y: item.s }));
 
-      // Chart.js configuration
       const ctx = document.getElementById('myChart').getContext('2d');
       myChart = new Chart(ctx, {
         type: 'line',
@@ -236,13 +236,13 @@ tooltip.style.top = `${rect.top + yOffset}px`;
               position: 'bottom',
               title: {
                 display: true,
-                text: 'Distance(km)'
+                text: 'Time (Minutes)'
               }
             },
             y: {
               title: {
                 display: true,
-                text: 'Time (Minutes)'
+                text: 'Distance (km)'
               }
             }
           }
@@ -251,11 +251,7 @@ tooltip.style.top = `${rect.top + yOffset}px`;
       });
     }
 
-    // Fetch and plot the chart using AJAX
     fetchJSONFile('csvjson.json', plotChart);
   </script>
 </body>
 </html>
-
-
-
