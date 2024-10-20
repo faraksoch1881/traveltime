@@ -66,17 +66,35 @@
     <div id="draggable"></div>
     <canvas id="myChart"></canvas>
     <div id="tooltip"></div> <!-- Tooltip to display values -->
-
-      <div id ="errorbox"></div>
-    <div id ="errorbox2"></div>
-    <div id="pixelbox"></div>
   </div>
-  <br>
+
 
 
   <script>
 
+const circlePlugin = {
+    id: 'circlePlugin',
+    beforeDraw: function(chart) {
+        const ctx = chart.ctx;
+        const chartArea = chart.chartArea;
 
+        if (chart.intersectionPoints) {
+            // Draw circle for P
+            ctx.beginPath();
+            ctx.arc(chart.intersectionPoints.p.x, chart.intersectionPoints.p.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'black';
+            ctx.fill();
+            ctx.closePath();
+
+            // Draw circle for S
+            ctx.beginPath();
+            ctx.arc(chart.intersectionPoints.s.x, chart.intersectionPoints.s.y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = 'black';
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+};
     // Initialize the draggable line
     $(function() {
       $("#draggable").draggable({
@@ -98,6 +116,21 @@
           // Find the nearest points on the datasets
           const pYValue = getYValueAtX(xValue, myChart.data.datasets[0].data);
           const sYValue = getYValueAtX(xValue, myChart.data.datasets[1].data);
+
+              // Calculate pixel positions for circles
+    const pPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(pYValue) };
+    const sPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(sYValue) };
+
+    // Set the intersection points to be used by the plugin
+    myChart.intersectionPoints = {
+        p: pPixelPos,
+        s: sPixelPos
+    };
+
+    // Update chart to show the circles
+    myChart.update();
+
+
 
           const difference = pYValue && sYValue ? (pYValue - sYValue) : null;
           const xOffset = -500; // To shift the tooltip slightly right of the draggable line
@@ -213,7 +246,8 @@ tooltip.style.top = `${rect.top + yOffset}px`;
               }
             }
           }
-        }
+        },
+        plugins: [circlePlugin]
       });
     }
 
