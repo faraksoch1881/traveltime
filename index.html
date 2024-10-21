@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chart.js with Draggable Line and Intersections</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-  <style>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+    <title>Image Upload Form with Moveable Box</title>
+    <style>
     body {
       display: flex;
       justify-content: center;
@@ -22,6 +25,90 @@
       background-position: center;
       background-repeat: no-repeat;
     }
+.container {
+  height: 100%;
+  width: 100%;
+}
+
+
+.sidenav {
+  width: 40%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 20px;
+ 
+}
+.bgrnd {
+  width: 60%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 40%;
+margin-left: 20px;
+      padding: 20px;
+}
+
+        .image-box {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        img {
+            max-width: 100%; /* Ensure the image fits within its container */
+            max-height: 100%; /* Ensure the image fits within its container */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+   #imageContainer {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid #ccc;
+    position: relative; /* Necessary for positioning the moveable box */
+    z-index: 1; /* Ensure the image container has a lower z-index than the moveable box */
+    width: 500px; /* Set an explicit width for the imageContainer */
+    height: 500px; /* Set an explicit height for the imageContainer */
+}
+
+.moveable-box {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 255, 255, 0); /* Fully transparent */
+    position: absolute; /* Position relative to the imageContainer */
+    top: 20px; /* Position inside the imageContainer */
+    left: 10px; /* Adjust as needed */
+    border: 1px dashed #000; /* Retain the dashed border */
+    z-index: 15; /* Higher z-index ensures it's above any content in the imageContainer */
+}
+        .input-group {
+            margin: 10px 0; /* Space between input groups */
+            display: flex; /* Use flexbox for horizontal arrangement */
+            align-items: center; /* Align items vertically centered */
+        }
+        .input-group label {
+            margin-right: 10px; /* Space between label and text boxes */
+        }
+        .input-group input {
+            margin-right: 10px; /* Space between text boxes */
+        }
+
+        .draggable-line {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 5px;
+    z-index: 10; /* Ensure they are above the image */
+}
+
+.line-text {
+    position: absolute;
+    top: -20px; /* Adjust to position text above the line */
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: black;
+}
 
     #chart-container {
       width: 60%;
@@ -33,26 +120,35 @@
       background-color: white;
     }
 
-    #draggable {
-      position: absolute;
-      width: 5px;
-      height: 100%;
-      background-color: rgba(0, 0, 255, 0.5);
-      z-index: 10;
-      cursor: pointer;
-    }
+#draggable {
+  position: absolute;
+  width: 5px;
+  height: 100%;
+  background-color:#000;
+  z-index: 10;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-    #tooltip {
-      position: absolute;
-      background-color: rgba(0, 0, 0, 0.75);
-      color: white;
-      padding: 5px;
-      border-radius: 3px;
-      font-size: 12px;
-      display: none;
-      z-index: 20;
-      max-width: 150px;
-    }
+#draggable i {
+  font-size: 20px;
+  color: white;
+}
+
+#tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  display: none;
+  z-index: 20;
+  max-width: 350px;
+}
+
 
     /* Modal styling */
     .modal {
@@ -95,44 +191,267 @@
       text-decoration: none;
       cursor: pointer;
     }
-  </style>
+    </style>
 </head>
 <body>
 
-  <div id="chart-container">
-    <div id="draggable"></div>
+     <div class="container">
+    <div class="sidenav">
+        
+
+        <form id="uploadForm">
+        <input type="file" id="imageInput" accept="image/*" required>
+        <button type="submit">Submit</button>
+    </form>
+    <br>
+<span id="displaytext">1) Upload Photo<br>2) Align  box to x-axis range<br>3) Enter x axis minimum and maximum<br>4) Calculate<br>5) Adjust sliders</span>
+
+
+    
+ <div id="imageContainer">
+    <div id="leftLine" class="draggable-line" style="position: absolute; left: 0; top: 0; height: 100%; width: 5px; background-color: red;"> <span class="line-text left-text">p</span></div>
+<div id="rightLine" class="draggable-line" style="position: absolute; right: 0; top: 0; height: 100%; width: 5px; background-color: blue;"><span class="line-text right-text">s</span></div>
+    <div id="imageContent"></div> <!-- Separate container for images -->
+    <div class="moveable-box"></div> <!-- Moveable box remains here -->
+</div>
+    <!-- First Input Group -->
+    <div class="input-group">
+        <label for="input1">x-axis:</label>
+        <input type="text" id="input1" placeholder="Text Box 1.1" value="0">
+        <input type="text" id="input2" placeholder="Text Box 1.2" value="500">
+    </div>
+      <button id="calculateButton">Calculate Displacement</button>
+
+
+
+
+    </div>
+    <div class="bgrnd">
+
+                          <div id="chart-container">
+    <div id="draggable">
+  <i class="fa-solid fa-hand-pointer" style="color: red;"></i>
+</div>
     <canvas id="myChart"></canvas>
     <div id="tooltip"></div>
   </div>
 
-  <!-- Welcome Modal -->
-  <div id="welcomeModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3>!Important!</h3>
-      <h2>Drag left green vertical line using mouse to calculate distance from P and S wave.</h2>
+
     </div>
   </div>
+ 
 
-  <script>
-    // Show the welcome modal when the app loads
-    $(document).ready(function() {
-      $('#welcomeModal').fadeIn();
 
-      // Close modal when the close button is clicked
-      $('.close').click(function() {
-        $('#welcomeModal').fadeOut();
-      });
 
-      // Close modal when clicking outside of the modal content
-      $(window).click(function(event) {
-        if ($(event.target).is('#welcomeModal')) {
-          $('#welcomeModal').fadeOut();
+  
+    <script src="//daybrush.com/moveable/release/latest/dist/moveable.min.js"></script>
+    <script>
+          let x1, targetRange, originalRange;
+          let b_disp=null;
+          let r_disp=null;
+
+    // Global flag to check if calculate button was clicked
+   
+
+
+$(document).ready(function() {
+    $('#imageContent').append('<img src="myimg.png" alt="Description of image">');
+});
+
+document.getElementById('calculateButton').addEventListener('click', function() {
+    const input1Value = document.getElementById('input1').value;
+    const input2Value = document.getElementById('input2').value;
+    const fileInput = document.getElementById('imageInput').files[0];
+
+
+   if (input1Value === '' || input2Value === '') {
+        alert("Please enter both x-axis values.");
+        return; // Stop the function if any input is empty
+    }
+
+
+// Check if file input is empty (no file selected)
+    if (!fileInput) {
+        alert("Please select an image file.");
+        return; // Stop the function if no file is selected
+    }
+
+        // Check if input1 and input2 are valid numbers
+        if (!isNaN(input1Value) && !isNaN(input2Value)) {
+            document.querySelector('.moveable-box').style.pointerEvents = 'none';
+            calculateClicked = true;
+            const moveableBox = document.querySelector('.moveable-box');
+            const moveableRect = moveableBox.getBoundingClientRect();
+
+            // Calculate x1 based on the moveable box's right edge
+            const x2 = moveableRect.right; // X position of the right edge of the moveable box
+            x1 = moveableRect.left; // X position of the right edge of the moveable box
+
+
+            // Calculate original range
+            originalRange = x2 - x1; // Interval between left edge and right edge
+
+
+            // Calculate target range using values from input1 and input2
+            targetRange = Math.abs(input2Value - input1Value); // Length or target range
+ 
+
+            // Calculate x_disp
+            const x_disp = (x0 - x1) * (targetRange / originalRange);
+
+         
+             const displayText = document.getElementById('displaytext'); // Element to display the results
+
+             displayText.innerText = `P wave: ${x_disp.toFixed(2)}`;
+           
+        
+    }else {
+        alert("Enter valid numeric values for both x-axis values.");
+    }
+});
+
+
+
+document.getElementById('imageContainer').addEventListener('mousemove', function(event) {
+
+});
+
+        const uploadForm = document.getElementById('uploadForm');
+        const imageInput = document.getElementById('imageInput');
+        const imageContainer = document.getElementById('imageContainer');
+        const moveableBox = document.querySelector('.moveable-box');
+
+        // Initialize Moveable
+        const moveable = new Moveable(document.body, {
+            target: moveableBox,
+            resizable: true,
+            keepRatio: false,
+            throttleResize: 1, // Throttle resize to prevent lag
+            renderDirections: ["nw", "n", "ne", "w", "e", "sw", "s", "se"], // Enable resizing from all sides and corners
+        });
+;
+
+        moveable.on('resize', ({ target, width, height, drag  }) => {
+            target.style.width = `${width}px`;
+            target.style.height = `${height}px`;
+            target.style.transform = drag.transform;
+        });
+uploadForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    const file = imageInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        
+        const img = new Image();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+
+            img.onload = function() {
+                const aspectRatio = img.width / img.height;
+
+                // Set dimensions of the imageContainer based on the aspect ratio
+                if (aspectRatio > 1) {
+                    // Landscape
+                    imageContainer.style.width = '500px'; // Set width as needed
+                    imageContainer.style.height = `${500 / aspectRatio}px`; // Adjust height based on aspect ratio
+                } else {
+                    // Portrait or Square
+                    imageContainer.style.height = '500px'; // Set height as needed
+                    imageContainer.style.width = `${500 * aspectRatio}px`; // Adjust width based on aspect ratio
+                }
+
+                // Clear existing images, but leave the moveable box intact
+                const imageContent = document.getElementById('imageContent');
+                imageContent.innerHTML = ''; // Clear only image content
+
+                const imageBox = document.createElement('div');
+                imageBox.classList.add('image-box');
+                imageBox.appendChild(img);
+                imageContent.appendChild(imageBox); // Append to imageContent div
+            };
+        };
+
+        reader.readAsDataURL(file);
+    }
+});
+$(function() {
+    let leftLine = $("#leftLine");
+    let rightLine = $("#rightLine");
+
+       let r_disp = null;
+    let b_disp = null;
+
+    // Left line draggable functionality
+    leftLine.draggable({
+        axis: "x",
+        containment: "#imageContainer",
+        drag: function(event, ui) {
+            if (calculateClicked) {  // Only run if calculate button is clicked
+                const xr = ui.position.left + 12; // x position of red line
+                
+                // Prevent the left line from crossing the right line
+                if (xr >= rightLine.position().left) {
+                    ui.position.left = rightLine.position().left - 12; // Move the left line to stay on the left of the right line
+                }
+
+                // Access x_disp calculation here
+                r_disp = (xr - x1) * (targetRange / originalRange);
+                
+
+                // Update display text with P wave
+                const displayText = document.getElementById('displaytext');
+
+                const diff_p_s = (r_disp !== null && b_disp !== null) ? Math.abs(r_disp - b_disp) : 0;
+                displayText.innerText = `P wave: ${r_disp !== null ? r_disp.toFixed(2) : "N/A"}, S wave: ${b_disp !== null ? b_disp.toFixed(2) : "N/A"}, Time Difference: ${diff_p_s.toFixed(2)}`;
+
+                
+            }
         }
-      });
     });
 
-    const circlePlugin = {
+    // Right line draggable functionality
+    rightLine.draggable({
+        axis: "x",
+        containment: "#imageContainer",
+        drag: function(event, ui) {
+            if (calculateClicked) {  // Only run if calculate button is clicked
+                
+                const xb = ui.position.left + 12; // x position of blue line
+
+                // Prevent the right line from crossing the left line
+                if (xb <= leftLine.position().left) {
+                    ui.position.left = leftLine.position().left + 12; // Move the right line to stay on the right of the left line
+                }
+
+                // Access b_disp calculation here
+                b_disp = (xb - x1) * (targetRange / originalRange);
+               
+
+                // Update display text with P and S waves
+                const displayText = document.getElementById('displaytext');
+                      const diff_p_s = (r_disp !== null && b_disp !== null) ? Math.abs(r_disp - b_disp) : 0;
+                displayText.innerText = `P wave: ${r_disp !== null ? r_disp.toFixed(2) : "N/A"}, S wave: ${b_disp !== null ? b_disp.toFixed(2) : "N/A"}, Time Difference: ${diff_p_s.toFixed(2)}`;
+
+          
+            }
+        }
+    });
+});
+
+document.getElementById('imageInput').addEventListener('click', function() {
+   // Clear any existing values of input1 and input2 when imageInput is clicked
+   document.getElementById('input1').value = '';
+   document.getElementById('input2').value = '';
+      let calculateClicked = false;
+
+});
+
+
+
+// script for time travel
+
+const circlePlugin = {
       id: 'circlePlugin',
       beforeDraw: function(chart) {
         const ctx = chart.ctx;
@@ -154,32 +473,43 @@
       }
     };
 
-    $(function() {
-      $("#draggable").draggable({
-        axis: "x",
-        containment: "#myChart",
-        drag: function(event, ui) {
-          const canvas = document.getElementById('myChart');
-          const rect = canvas.getBoundingClientRect();
-          const xPos = ui.position.left;
-          const xValue = myChart.scales.x.getValueForPixel(xPos);
-          const pYValue = getYValueAtX(xValue, myChart.data.datasets[0].data);
-          const sYValue = getYValueAtX(xValue, myChart.data.datasets[1].data);
-          const pPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(pYValue) };
-          const sPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(sYValue) };
+  $(function() {
+  $("#draggable").draggable({
+    axis: "x",
+    containment: "#myChart",
+    drag: function(event, ui) {
+      const canvas = document.getElementById('myChart');
+      const rect = canvas.getBoundingClientRect();
+      const xPos = ui.position.left;
+      const xValue = myChart.scales.x.getValueForPixel(xPos);
+      const pYValue = getYValueAtX(xValue, myChart.data.datasets[0].data);
+      const sYValue = getYValueAtX(xValue, myChart.data.datasets[1].data);
+      const pPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(pYValue) };
+      const sPixelPos = { x: xPos, y: myChart.scales.y.getPixelForValue(sYValue) };
 
-          myChart.intersectionPoints = { p: pPixelPos, s: sPixelPos };
-          myChart.update();
+      myChart.intersectionPoints = { p: pPixelPos, s: sPixelPos };
+      myChart.update();
 
-          const difference = pYValue && sYValue ? (pYValue - sYValue) : null;
-          const tooltip = document.getElementById('tooltip');
-          tooltip.innerHTML = `Distance: ${xValue.toFixed(2)} km<br>P: ${pYValue ? pYValue.toFixed(2) : 'N/A'} min<br>S: ${sYValue ? sYValue.toFixed(2) : 'N/A'}min<br>Time: ${difference ? difference.toFixed(2) : 'N/A'}min`;
-          tooltip.style.display = 'block';
-          tooltip.style.left = `${xPos + rect.left - 500}px`;
-          tooltip.style.top = `${rect.top - 30}px`;
-        }
-      });
-    });
+      const difference = pYValue && sYValue ? (pYValue - sYValue) : null;
+
+      // Move the tooltip along with the draggable element
+      const tooltip = document.getElementById('tooltip');
+      tooltip.innerHTML = `
+        Distance: ${xValue.toFixed(2)} km<br>
+        P: ${pYValue ? pYValue.toFixed(2) : 'N/A'} min<br>
+        S: ${sYValue ? sYValue.toFixed(2) : 'N/A'} min<br>
+        Time: ${difference ? difference.toFixed(2) : 'N/A'} min
+      `;
+      tooltip.style.display = 'block';
+      
+      // Tooltip position exactly at the draggable element's location
+      tooltip.style.left = `${ui.position.left}px`; // Match draggable X position
+      tooltip.style.top = `${ui.position.top}px`;  // Match draggable Y position
+    }
+  });
+});
+
+
 
     function getYValueAtX(x, data) {
       const point = data.find(p => p.x >= x);
@@ -236,13 +566,13 @@
               position: 'bottom',
               title: {
                 display: true,
-                text: 'Distance (km)'
+                text: 'Time (Minutes)'
               }
             },
             y: {
               title: {
                 display: true,
-                text: 'Time (Minutes)'
+                text: 'Distance (km)'
               }
             }
           }
@@ -252,6 +582,6 @@
     }
 
     fetchJSONFile('csvjson.json', plotChart);
-  </script>
+    </script>
 </body>
 </html>
