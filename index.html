@@ -514,7 +514,8 @@ const circlePlugin = {
         Distance: ${xValue.toFixed(2)} km<br>
         P: ${pYValue ? pYValue.toFixed(2) : 'N/A'} min<br>
         S: ${sYValue ? sYValue.toFixed(2) : 'N/A'} min<br>
-        Time: ${difference ? difference.toFixed(2) : 'N/A'} min
+        Time: ${difference > 0 ? (difference / 60).toFixed(2) : 'N/A'} min<br>
+        Time: ${difference ? difference.toFixed(2) : 'N/A'} sec
       `;
       tooltip.style.display = 'block';
       
@@ -575,29 +576,33 @@ const circlePlugin = {
             }
           ]
         },
-        options: {
-          scales: {
-            x: {
-              type: 'linear',
-              position: 'bottom',
-              title: {
+options: {
+    scales: {
+        x: {
+            type: 'linear',
+            position: 'bottom',
+            min: 0,
+            max: 10000,
+            title: {
                 display: true,
                 text: 'Distance (km)'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Time (Minutes)'
-              }
             }
-          }
         },
+        y: {
+            min: 0, // Set the minimum value for the y-axis
+            max: 1500, // Set the maximum value for the y-axis
+            title: {
+                display: true,
+                text: 'Time (seconds)'
+            }
+        }
+    }
+},
         plugins: [circlePlugin]
       });
     }
 
-    fetchJSONFile('csvjson.json', plotChart);
+    fetchJSONFile('travel_time_curves.json', plotChart);
     </script>
 </body>
 </html>
