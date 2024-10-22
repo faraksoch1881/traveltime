@@ -213,7 +213,7 @@ margin-left: 20px;
         <button type="submit">Submit</button>
     </form>
     <br>
-<span id="displaytext">1) Upload Photo<br>2) Align  box to x-axis range<br>3) Enter x axis minimum and maximum<br>4) Calculate<br>5) Adjust sliders</span>
+<span id="displaytext">Drag Blue and Red Bar</span>
 
 
     
@@ -229,8 +229,10 @@ margin-left: 20px;
         <input type="text" id="input1" placeholder="x-minimum" >
         <input type="text" id="input2" placeholder="x-maximum" >
     </div>
-      <button id="calculateButton">Calculate Displacement</button>
-
+      <button id="calculateButton">Calculate Displacement</button><br><br><hr>
+      <div>
+<span id="displaytext">1) Upload Photo<br>2) Align  box to x-axis range<br>3) Enter x axis minimum and maximum<br>4) Calculate<br>5) Adjust sliders</span>
+</div>
 
 
 
@@ -273,7 +275,7 @@ margin-left: 20px;
         }
       });
     });
-          let x1, targetRange, originalRange;
+          let x1, targetRange, originalRange,input1Value,input2Value;
           let b_disp=null;
           let r_disp=null;
 
@@ -286,53 +288,38 @@ $(document).ready(function() {
 });
 
 document.getElementById('calculateButton').addEventListener('click', function() {
-    const input1Value = document.getElementById('input1').value;
-    const input2Value = document.getElementById('input2').value;
+
+    input1Value = parseFloat(document.getElementById('input1').value);
+    input2Value = parseFloat(document.getElementById('input2').value);
+
+
     const fileInput = document.getElementById('imageInput').files[0];
 
-
-   if (input1Value === '' || input2Value === '') {
+    if (input1Value === '' || input2Value === '') {
         alert("Please enter both x-axis values.");
-        return; // Stop the function if any input is empty
+        return;
     }
 
-
-// Check if file input is empty (no file selected)
     if (!fileInput) {
         alert("Please select an image file.");
-        return; // Stop the function if no file is selected
+        return;
     }
 
-        // Check if input1 and input2 are valid numbers
-        if (!isNaN(input1Value) && !isNaN(input2Value)) {
-            document.querySelector('.moveable-box').style.pointerEvents = 'none';
-            calculateClicked = true;
-            const moveableBox = document.querySelector('.moveable-box');
-            const moveableRect = moveableBox.getBoundingClientRect();
+    if (!isNaN(input1Value) && !isNaN(input2Value)) {
+        document.querySelector('.moveable-box').style.pointerEvents = 'none';
+        calculateClicked = true;
 
-            // Calculate x1 based on the moveable box's right edge
-            const x2 = moveableRect.right; // X position of the right edge of the moveable box
-            x1 = moveableRect.left; // X position of the right edge of the moveable box
+        const moveableBox = document.querySelector('.moveable-box');
+        const moveableRect = moveableBox.getBoundingClientRect();
+        const x2 = moveableRect.right;
+        x1 = moveableRect.left;
 
+        originalRange = x2 - x1;
+        targetRange = Math.abs(input2Value - input1Value);
 
-            // Calculate original range
-            originalRange = x2 - x1; // Interval between left edge and right edge
-
-
-            // Calculate target range using values from input1 and input2
-            targetRange = Math.abs(input2Value - input1Value); // Length or target range
- 
-
-            // Calculate x_disp
-            const x_disp = (x0 - x1) * (targetRange / originalRange);
-
-         
-             const displayText = document.getElementById('displaytext'); // Element to display the results
-
-             displayText.innerText = `P wave: ${x_disp.toFixed(2)}`;
-           
-        
-    }else {
+        // Print the values in console after calculation
+        console.log("Input1 Value (After Calculate):", input1Value);
+    } else {
         alert("Enter valid numeric values for both x-axis values.");
     }
 });
@@ -415,15 +402,15 @@ $(function() {
         containment: "#imageContainer",
         drag: function(event, ui) {
             if (calculateClicked) {  // Only run if calculate button is clicked
-                const xr = ui.position.left + 12; // x position of red line
+                const xr = ui.position.left+24; // x position of red line
                 
                 // Prevent the left line from crossing the right line
                 if (xr >= rightLine.position().left) {
-                    ui.position.left = rightLine.position().left - 12; // Move the left line to stay on the left of the right line
+                    ui.position.left = rightLine.position().left; // Move the left line to stay on the left of the right line
                 }
 
                 // Access x_disp calculation here
-                r_disp = (xr - x1) * (targetRange / originalRange);
+                r_disp = (xr - x1) * (targetRange / originalRange)+input1Value;
                 
 
                 // Update display text with P wave
@@ -432,7 +419,7 @@ $(function() {
                 const diff_p_s = (r_disp !== null && b_disp !== null) ? Math.abs(r_disp - b_disp) : 0;
                 displayText.innerText = `P wave: ${r_disp !== null ? r_disp.toFixed(2) : "N/A"}, S wave: ${b_disp !== null ? b_disp.toFixed(2) : "N/A"}, Time Difference: ${diff_p_s.toFixed(2)}`;
 
-                
+                console.error("r_disp is not a valid number:", r_disp);
             }
         }
     });
@@ -444,22 +431,24 @@ $(function() {
         drag: function(event, ui) {
             if (calculateClicked) {  // Only run if calculate button is clicked
                 
-                const xb = ui.position.left + 12; // x position of blue line
+                const xb = ui.position.left+24; // x position of blue line
 
                 // Prevent the right line from crossing the left line
                 if (xb <= leftLine.position().left) {
-                    ui.position.left = leftLine.position().left + 12; // Move the right line to stay on the right of the left line
+                    ui.position.left = leftLine.position().left; // Move the right line to stay on the right of the left line
                 }
 
                 // Access b_disp calculation here
-                b_disp = (xb - x1) * (targetRange / originalRange);
+                b_disp = (xb - x1) * (targetRange / originalRange)+input1Value;
+                console.log(input2Value)
                
 
                 // Update display text with P and S waves
                 const displayText = document.getElementById('displaytext');
                       const diff_p_s = (r_disp !== null && b_disp !== null) ? Math.abs(r_disp - b_disp) : 0;
                 displayText.innerText = `P wave: ${r_disp !== null ? r_disp.toFixed(2) : "N/A"}, S wave: ${b_disp !== null ? b_disp.toFixed(2) : "N/A"}, Time Difference: ${diff_p_s.toFixed(2)}`;
-
+         
+console.error("r_disp is not a valid number:", r_disp);
           
             }
         }
