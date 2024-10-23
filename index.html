@@ -17,8 +17,6 @@
  body {
     margin: 15px;
     padding: 15px;
- 
-  
 }
 
 
@@ -341,10 +339,7 @@ button.deleteRowBtn:hover {
 
     <div id="video-container" class="draggable">
         <button id="close-button" title="Close" aria-label="Close video">✖</button>
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/w0cKAMom0W4?wmode=transparent" 
-                title="YouTube video player" frameborder="0"  wmode=transparent”
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+       <iframe width="560" height="315" src="https://www.youtube.com/embed/GnrGaMdH_-s?si=Ky-0Tro8FA5yf3Lp" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
     </div>
 
 
@@ -697,6 +692,8 @@ document.getElementById('imageInput').addEventListener('click', function() {
    // Clear any existing values of input1 and input2 when imageInput is clicked
    document.getElementById('input1').value = '';
    document.getElementById('input2').value = '';
+      document.getElementById('input3').value = '';
+   document.getElementById('input4').value = '';
       
 
 });
@@ -884,7 +881,7 @@ if (dynamic_Table.style.visibility === "hidden" || dynamic_Table.style.visibilit
         <td><input type="text" value="${val_lon}" /></td>
         <td><input type="text" value="${(r_disp).toFixed(2)}m" /></td>
         <td><input type="text" value="${(b_disp).toFixed(2)}m" /></td>
-        <td><input type="text" value="${(time_difference).toFixed(2)/60}m" /></td>
+        <td><input type="text" value="${(time_difference / 60).toFixed(2)}m" /></td>
         <td><input type="text" value="${(xValue_dist).toFixed(2)}km" /></td>
         <td><button class="deleteRowBtn">🗑️</button></td>
     `;
