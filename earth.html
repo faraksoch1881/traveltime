@@ -1,0 +1,255 @@
+<!-- map.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map View</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="js/js-colormaps.js"></script>
+    <style>
+        #map { height: 100vh; }
+        .triangle-icon {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 10px solid red;
+            margin: -5px 0 0 -5px; /* Centering */
+        }
+
+
+        #checkboxDiv {
+    background-color: #e0e0e0; /* Light grey background */
+    border-radius: 15px;       /* Rounded corners */
+    padding: 15px;             /* Padding around the radio buttons */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Soft shadow for a nice effect */
+    width: fit-content;        /* Content-based width */
+
+    /* Positioning at bottom right */
+    position: fixed;           /* Fixed positioning to stick to viewport */
+    bottom: 40px;              /* 20px from the bottom */
+    right: 20px;               /* 20px from the right */
+
+    z-index: 1000;             /* Ensure it's on top of other elements */
+}
+
+#checkboxDiv h4 {
+    margin-top: 0;             /* No top margin for heading */
+    font-family: Arial, sans-serif; /* Font styling */
+    color: #333;               /* Text color */
+}
+
+#checkboxDiv input {
+    margin-right: 5px;         /* Space between radio button and text */
+}
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Get the data from localStorage
+        const locations = JSON.parse(localStorage.getItem('locations')) || [];
+
+        // Initialize the Leaflet map
+        const map = L.map('map').setView([locations[0]?.lat || 0, locations[0]?.lon || 0], 3);
+
+        // Load a tile layer
+    // Add OpenStreetMap tile layer
+    var tileLayers = {
+        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }),
+        "CARTO Dark": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+        }),
+        "CARTO Voyager": L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+        }),
+        "CARTO Positron": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.carto.com/attributions">CARTO</a>'
+        }),
+        "Imagery": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; <a href="https://www.arcgis.com">Esri</a>'
+        })
+    };
+
+        // Add one of the tile layers as the default layer
+    tileLayers["OpenStreetMap"].addTo(map);
+
+        // Add layer control to switch between the tile layers
+    
+    // var overlayMaps = {
+    //     'OSM Bldgs': osmb
+    // }
+
+    L.control.layers(tileLayers).addTo(map);
+
+
+        // Add triangle icons based on the loaded data
+        locations.forEach(loc => {
+            const { lat, lon, dist } = loc;
+            const marker = L.marker([lat, lon]).addTo(map);
+
+            // Add a circle to represent the distance
+            L.circle([lat, lon], {
+        radius: dist*1000, // Assuming xValue_dist is in kilometers
+        color: 'blue',
+        fillOpacity: 0, // Make the fill completely transparent
+        opacity: 0.2 // Set the border opacity (adjust as needed)
+            }).addTo(map);
+        });
+
+
+// Assuming you have already created a Leaflet map instance called 'map'
+let markers = [];
+// Function to fetch earthquake data from the USGS API
+function fetchEarthquakeData() {
+    // Alert for debugging; remove in production
+    alert("Fetching earthquake data...");
+
+    const url = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2001-01-01&minmagnitude=7"; // Replace with appropriate endpoint for desired earthquakes
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+
+            const magnitudes = data.features.map(feature => feature.properties.mag);
+            const minValue = Math.min(...magnitudes);
+            const maxValue = Math.max(...magnitudes);
+
+            data.features.forEach(feature => {
+                const { coordinates } = feature.geometry;
+                const magnitude = feature.properties.mag;
+                const earth_place = feature.properties.place;
+                const lat = coordinates[1];
+                const lon = coordinates[0];
+
+                // Define a color based on the magnitude
+                const normalizedValue = (magnitude - minValue) / (maxValue - minValue);
+
+                // Get the color for the normalized value using the Turbo colormap
+                const colorArray = evaluate_cmap(normalizedValue, 'hot', true);
+                const color = `rgb(${colorArray[0]}, ${colorArray[1]}, ${colorArray[2]})`;
+
+               // Normalize the magnitude to set radius
+                const normalizedRadius = (magnitude - minValue) / (maxValue - minValue);
+                const minRadius = 5;  // Minimum radius in pixels
+                const maxRadius = 12;  // Maximum radius in pixels
+                const radius = minRadius + normalizedRadius * (maxRadius - minRadius);
+
+
+                // Create a circle marker for each earthquake
+                const marker =L.circleMarker([lat, lon], {
+                    radius: radius, // Adjust radius as needed
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.5,
+                    weight: 1
+                }).addTo(map)
+
+                     .bindPopup(`Magnitude: ${magnitude},<br> Location: ${earth_place}`); 
+                    markers.push(marker);
+            });
+        })
+        .catch(error => console.error('Error fetching earthquake data:', error));
+}
+
+
+// Function to clear earthquake markers
+function clearEarthquakeMarkers() {
+    // Implement logic to remove earthquake markers from the map
+    // If you are storing markers in an array, loop through and remove them
+        markers.forEach(marker => map.removeLayer(marker));
+    // Clear the markers array
+        markers = [];
+}
+
+// Create a control panel for layer selection
+var layerControl = L.control({ position: 'bottomright' });
+
+layerControl.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'layer-control');
+    div.innerHTML = '<div id="checkboxDiv">' +
+        '<input type="checkbox" name="geoLayer" value="url1"> Earthquakes<br>' +
+        '<input type="checkbox" name="geoLayer" value="url2"> Show Icon<br>' +
+        '</div>';
+
+    // Add event listener to the dynamically created checkbox inputs within the control panel
+    addCheckboxListeners(div); // Call the function to add listeners after the checkboxes are created
+
+    return div;
+};
+let draggableMarker;
+// Function to add checkbox event listeners
+function addCheckboxListeners(div) {
+    div.querySelectorAll('input[name="geoLayer"]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function (event) {
+            const selectedValue = event.target.value;
+            
+            switch (selectedValue) {
+                case 'url1':
+                    if (event.target.checked) {
+                        // Fetch and display earthquake data when the checkbox is checked
+                        fetchEarthquakeData();
+                    } else {
+                        // Remove earthquake markers when the checkbox is unchecked
+                        clearEarthquakeMarkers();
+                    }
+                    break;
+
+                case 'url2':
+                    // You can add logic for 'Show Icon' checkbox if needed
+// Inside your checkbox event listener
+if (event.target.checked) {
+    // Create a custom green icon for the marker
+    var greenIcon = L.icon({
+        iconUrl: 'blast.png',
+        iconSize: [50, 50], // size of the icon
+        shadowSize: [50, 64], // size of the shadow
+        iconAnchor: [22, 94], // point of the icon which will correspond to marker's location
+        shadowAnchor: [4, 62],  // the same for the shadow
+        popupAnchor: [-3, -76] // point from which the popup should open relative to the iconAnchor
+    });
+    
+    // Create a draggable marker
+    draggableMarker = new L.marker([30.83289166564515, -30.01390025912427], {
+        icon: greenIcon,
+        draggable: true
+    });
+    
+    // Handle the drag end event
+    draggableMarker.on('dragend', function(event) {
+        var position = event.target.getLatLng();
+        // Update the marker's position
+        draggableMarker.setLatLng(position);
+        // Pan the map to the new position
+        map.panTo(position);
+    });
+
+    // Add the draggable marker to the map
+    map.addLayer(draggableMarker);
+} else {
+    // Remove the draggable marker from the map if unchecked
+    if (draggableMarker) {
+        map.removeLayer(draggableMarker); // Remove the marker from the map
+        draggableMarker = null; // Reset the reference to null
+    }
+}
+        break;
+                default:
+                    console.error('Invalid checkbox selection');
+                    break;
+            }
+        });
+    });
+}
+
+layerControl.addTo(map);
+
+
+
+    </script>
+</body>
+</html>
